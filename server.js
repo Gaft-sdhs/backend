@@ -7,7 +7,8 @@ import bodyParser from "body-parser"; // 요청 본문 구문 분석을 위한 �
 import session from 'express-session'; // 세션 관리를 위한 미들웨어
 import MongoStore from "connect-mongo"; // MongoDB 세션 저장소 설정을 위한 미들웨어
 import { appendFile } from "fs"; // 파일 추가 작업을 위한 모듈
-
+import './database/database.js'
+import router from "./router/router.js";
 const server = express(); // Express 애플리케이션 생성
 
 // 요청 본문 구문 분석을 위한 미들웨어 설정
@@ -27,11 +28,18 @@ server.use(session({
     saveUninitialized: false, // 초기화되지 않은 세션을 저장할 것인지 여부
     store: MongoStore.create({ mongoUrl: process.env.DB_URL }) // 세션 데이터를 MongoDB에 저장하기 위한 설정
 }));
+server.use(helmet());
+server.use("/",router);
+
+server.set("port", process.env.PORT);
+
 
 // 서버 시작
 server.listen(server.get('port'), () => {  
     console.log(`server is running on port ${process.env.PORT}`);
 });
+
+
 
 // 에러 처리
 server.on('error', err => {
