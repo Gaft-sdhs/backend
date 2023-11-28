@@ -8,6 +8,17 @@ EyeFit 안경도 패션이다 프로젝트 백엔드
 - img: ".thumb > img",
 - name: ".v2 > dt",
 - subtitle: ".v2 > .title"
+- price: ".v2 > dd > em > em > strong"
+- page : 434
+
+### 무신가 어플 selector:
+- body: "ul#searchList > li",
+-img : ".li_inner > .list_img > a.href"
+- name: ".article_info > .item_title"
+- subtitle: " .article_info > .list_info "
+- price: ".article_info > .price"
+- page: 192              
+
 
 =======
 안경테 추천 및 정보 제공 기능
