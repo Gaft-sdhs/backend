@@ -1,153 +1,138 @@
 import User from "../model/User.js";
 import bcrypt from "bcrypt";
-import axios from "axios";
-import cheerio from "cheerio";
-import fs from "fs/promises";
-import { statSync, existsSync, writeFileSync, writeFile } from "fs";
+import fs from "fs";
+
+// 회원가입 처리
 export const signUp = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body; // 클라이언트로부터 이메일과 비밀번호를 받아옵니다.
 
-    const emailExists = User.exists({ email });
-    const encryptedPassword = bcrypt.hashSync(password, 10);
+    const emailExists = User.exists({ email }); // 이미 존재하는 이메일인지 확인합니다.
+    const encryptedPassword = bcrypt.hashSync(password, 10); // 비밀번호를 해싱합니다.
 
     if (emailExists)
-      return res.status(400).json({ messege: "User already exists" });
+      return res.status(400).json({ message: "User already exists" }); // 이미 등록된 유저일 경우 에러 메시지를 반환합니다.
 
-    const newUser = User.create({ email, password: encryptedPassword });
+    const newUser = User.create({ email, password: encryptedPassword }); // 새로운 유저를 생성합니다.
 
-    console.log({ "User created": newUser });
+    console.log({ "User created": newUser }); // 새로운 유저가 생성되었음을 로그에 남깁니다.
 
-    res
-      .status(201)
-      .json({
-        messege: "Member registration completed successfully",
-        user: newUser,
-      });
+    res.status(201).json({
+      message: "Member registration completed successfully",
+      user: newUser,
+    }); // 회원가입이 성공했음을 클라이언트에게 응답합니다.
   } catch (error) {
     console.error(error);
     res
       .status(500)
-      .json({ messege: "An error occurred while processing your request" });
+      .json({ message: "An error occurred while processing your request" });
   }
 };
 
+// 로그인 처리
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body; // 클라이언트로부터 이메일과 비밀번호를 받아옵니다.
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }); // 해당 이메일로 유저를 찾습니다.
 
     if (!user)
-      return res
-        .status(400)
-        .json({
-          messege: "No Users found with the email & password you provided",
-        });
+      return res.status(400).json({
+        message: "No Users found with the email & password you provided",
+      }); // 해당 유저가 없을 경우 에러 메시지를 반환합니다.
 
-    const checkPassWord = await bcrypt.compare(password, user.password);
+    const checkPassWord = await bcrypt.compare(password, user.password); // 비밀번호 일치 여부를 확인합니다.
 
     if (!checkPassWord)
-      return res.status(401).json({ messege: "password please try again" });
+      return res.status(401).json({ message: "password please try again" }); // 비밀번호가 일치하지 않을 경우 에러 메시지를 반환합니다.
 
-    res.status(200).json({ messege: "Succeesfully loged in" });
+    res.status(200).json({ message: "Successfully logged in" }); // 로그인이 성공했음을 클라이언트에게 응답합니다.
   } catch (error) {
     console.error(error);
     res
       .status(500)
-      .json({ messege: "An error occured while processing your request" });
+      .json({ message: "An error occurred while processing your request" });
   }
 };
 
-
-class web_Scraper{
-    constructor(name){
-        this.name = name;
-    }
-
-    getHtml = (url) => {
-       return new Promise(async (resolve, reject) => {
-         try {
-           resolve(await axios.get(url));
-         } catch (error) {
-           reject(error);
-         }
-       });
-     };
-      get_glasses_Html = async (url,bodyList,img_selector,name_selector,subtitle_selector,arr = [url,bodyList,img_selector,name_selector,subtitle_selector]) => {
-       try{
-            arr.forEach(element=>{
-                if(typeof(element) != String) return "All the parameter's must be A String";
-            })
-           
-           let glasses_List = [];
-           await this.getHtml(url).then((html) => {
-             const $ = cheerio.load(html.data);
-             const $bodyList = $(bodyList);
-         
-             $bodyList.map((i, element) => {
-               glasses_List[i] = {
-                 img_url: $(element).find(img_selector).attr("src"),
-                 glasses_name: $(element).find(name_selector).text(),
-                 subtitle: $(element).find(subtitle_selector).text(),
-               };
-             });
-           });
-       return await glasses_List;
-       }catch(error){
-            console.error(error);
-           return "An errror occured While getting the html";
-       }
-     };
-
-     save_to_json = async (url,page_number,file_path) =>{
-         const arr = [];
-         try {
-            fs.stat(file_path,(err,stats)=>{
-                console.log(stats.size)
-                if(err){
-                    console.error('Error occurred while checking file:',err);
-                    return "Error occurred while checking file";
-                }else{
-                    if(stats.size !== 0) return "File is Not Empty"
-                }
-            });
-
-            for(let i=1; i<=page_number; i++){
-                    await this.get_glasses_Html(url+`&page=${i}`, "ul.list > li",".thumb > img",".v2 > dt",".v2 > .title").then(array=>{
-                        arr.push(array[i]);  
-                        console.log(url+`&page=${i}`);
-                    })
-                  
-                }
-                const jsonString = JSON.stringify(arr, null, 2); 
-                fs.writeFile(file_path,jsonString, "utf8");
-                console.log("File was successfully saved.");
-        }catch(error) {
-            console.error("Error writing file", error);
-        }
-   } 
-
-}
-
-const rounz = new web_Scraper;
-// rounz.name = "Rounz";
-// console.log(rounz.name);
-// const a = async () =>{
-//     const url = process.env.ROUNZ_REGULAR_GLASSES_URL
-//     rounz.save_to_json(url,3,rounz.name,"rounz_glasses.json");
-// }   
-
-// a()
-
-    rounz.get_glasses_Html(process.env.ROUNZ_REGULAR_GLASSES_URL, "ul.list > li",".thumb > img",".v2 > dt",".v2 > .title").then(array=>{
-        rounz.save_to_json(process.env.ROUNZ_REGULAR_GLASSES_URL,434,"./json/rounz_glasses.json");
-        // console.log(array);
-    });
-
+// 일정 개수의 안경 정보를 반환하는 함수
 export const get_regular_glasses = async (req, res) => {
+  try {
+    const { length } = req.query; // 클라이언트로부터 받은 길이 정보를 가져옵니다.
+    const client_data = []; // 클라이언트에게 전달할 데이터를 담을 배열을 초기화합니다.
 
-//   res.status(200).json({ type: "Array", array: arr });
+    const path = process.cwd() + `/json/rounz_glasses.json`; // JSON 파일 경로를 설정합니다.
+    fs.readFile(path, "utf8", (err, data) => { // JSON 파일을 비동기적으로 읽어옵니다.
+      if (err) {
+        console.error(err);
+        res
+          .status(500)
+          .json({ message: "An error occurred while finding the file" });
+      }
+
+      if (data.length == 0) {
+        return res.status(300).json({ message: "Scraping data" });
+      }
+
+      const objects = JSON.parse(data); // JSON 파일의 내용을 객체로 파싱합니다.
+
+      for (let i = 0; i < length; i++) { // 요청받은 길이만큼의 데이터를 가져와 배열에 담습니다.
+        client_data.push(objects[i]);
+      }
+
+      console.log(client_data.length); // 전송할 데이터의 길이를 로그에 출력합니다.
+
+      res
+        .status(200)
+        .json({ type: "Array", length: client_data.length, data: client_data }); // 클라이언트에게 응답을 보냅니다.
+      console.log("response sent");
+    });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while sending the data" });
+  }
 };
 
+// 랜덤한 안경 정보를 반환하는 함수
+export const send_random = async (req, res) => {
+  const { length } = req.query; // 클라이언트로부터 받은 길이 정보를 가져옵니다.
+  const client_data = []; // 클라이언트에게 전달할 데이터를 담을 배열을 초기화합니다.
+
+  const path = process.cwd() + `/json/rounz_glasses.json`; // JSON 파일 경로를 설정합니다.
+  fs.readFile(path, "utf8", (err, data) => { // JSON 파일을 비동기적으로 읽어옵니다.
+    if (err) {
+      console.error(err);
+      res
+        .status(500)
+        .json({ message: "An error occurred while finding the file" });
+    }
+
+    if (data.length == 0) {
+      return res.status(300).json({ message: "Scraping data" });
+    }
+
+    const objects = JSON.parse(data); // JSON 파일의 내용을 객체로 파싱합니다.
+
+    for (let i = 1; i <= length; i++) { // 요청받은 길이만큼의 데이터를 랜덤으로 가져와 배열에 담습니다.
+      let random_num = Math.floor(Math.random() * 400);
+      console.log(random_num);
+      client_data.push(objects[random_num]);
+    }
+
+    console.log(client_data);
+
+    res
+      .status(200)
+      .json({ type: "Array", length: client_data.length, data: client_data }); // 클라이언트에게 응답을 보냅니다.
+    console.log("response sent");
+  });
+};
+
+// 결제 처리
+export const payment = async (req, res) => {
+  const { cardNo, Expiration_date, cvc, holder_name, type, price, id, product_name } = req.body; // 클라이언트로부터 카드 정보 및 결제 관련 정보를 받아옵니다.
+  // 이곳에 결제 로직을 구현합니다.
+}
 

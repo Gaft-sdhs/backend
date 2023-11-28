@@ -7,8 +7,10 @@ import bodyParser from "body-parser"; // 요청 본문 구문 분석을 위한 �
 import session from 'express-session'; // 세션 관리를 위한 미들웨어
 import MongoStore from "connect-mongo"; // MongoDB 세션 저장소 설정을 위한 미들웨어
 import { appendFile } from "fs"; // 파일 추가 작업을 위한 모듈
+import "./controller/glasses_controller.js";
 import './database/database.js'
 import router from "./router/router.js";
+import fs from "fs"
 const server = express(); // Express 애플리케이션 생성
 
 // 요청 본문 구문 분석을 위한 미들웨어 설정
