@@ -1,19 +1,24 @@
 import User from "../model/User.js";
 import bcrypt from "bcrypt";
 import fs from "fs";
+import glasses_review from "../model/glasses_review.js";
 
 // 회원가입 처리
 export const signUp = async (req, res) => {
   try {
-    const { email, password } = req.body; // 클라이언트로부터 이메일과 비밀번호를 받아옵니다.
+    const { email, password} = req.body; // 클라이언트로부터 이메일과 비밀번호를 받아옵니다.
 
-    const emailExists = User.exists({ email }); // 이미 존재하는 이메일인지 확인합니다.
+    console.log(req.body);
+    
+    const emailExists = await User.exists({ email }); // 이미 존재하는 이메일인지 확인합니다.
     const encryptedPassword = bcrypt.hashSync(password, 10); // 비밀번호를 해싱합니다.
+
+    console.log(emailExists);
 
     if (emailExists)
       return res.status(400).json({ message: "User already exists" }); // 이미 등록된 유저일 경우 에러 메시지를 반환합니다.
 
-    const newUser = User.create({ email, password: encryptedPassword }); // 새로운 유저를 생성합니다.
+    const newUser = await User.create({email, password: encryptedPassword }); // 새로운 유저를 생성합니다.
 
     console.log({ "User created": newUser }); // 새로운 유저가 생성되었음을 로그에 남깁니다.
 
@@ -46,7 +51,9 @@ export const login = async (req, res) => {
     if (!checkPassWord)
       return res.status(401).json({ message: "password please try again" }); // 비밀번호가 일치하지 않을 경우 에러 메시지를 반환합니다.
 
-    res.status(200).json({ message: "Successfully logged in" }); // 로그인이 성공했음을 클라이언트에게 응답합니다.
+      req.session.user = user;
+      req.session.isLoggedIn = true;
+      res.status(200).json({ message: "Successfully logged in" }); // 로그인이 성공했음을 클라이언트에게 응답합니다.
   } catch (error) {
     console.error(error);
     res
@@ -73,11 +80,14 @@ export const get_regular_glasses = async (req, res) => {
       if (data.length == 0) {
         return res.status(300).json({ message: "Scraping data" });
       }
-
       const objects = JSON.parse(data); // JSON 파일의 내용을 객체로 파싱합니다.
 
       for (let i = 0; i < length; i++) { // 요청받은 길이만큼의 데이터를 가져와 배열에 담습니다.
-        client_data.push(objects[i]);
+        if(objects[i] === null){
+          i -= 1;
+        }else{
+          client_data.push(objects[i]);
+        }
       }
 
       console.log(client_data.length); // 전송할 데이터의 길이를 로그에 출력합니다.
@@ -94,6 +104,7 @@ export const get_regular_glasses = async (req, res) => {
       .json({ message: "An error occurred while sending the data" });
   }
 };
+
 
 // 랜덤한 안경 정보를 반환하는 함수
 export const send_random = async (req, res) => {
@@ -118,8 +129,12 @@ export const send_random = async (req, res) => {
     for (let i = 1; i <= length; i++) { // 요청받은 길이만큼의 데이터를 랜덤으로 가져와 배열에 담습니다.
       let random_num = Math.floor(Math.random() * 400);
       console.log(random_num);
-      client_data.push(objects[random_num]);
-    }
+      if(objects[randum_num] === null){
+        i-=1;
+      }else{
+        client_data.push(objects[random_num]);
+      }
+    } 
 
     console.log(client_data);
 
@@ -130,9 +145,27 @@ export const send_random = async (req, res) => {
   });
 };
 
-// 결제 처리
-export const payment = async (req, res) => {
-  const { cardNo, Expiration_date, cvc, holder_name, type, price, id, product_name } = req.body; // 클라이언트로부터 카드 정보 및 결제 관련 정보를 받아옵니다.
-  // 이곳에 결제 로직을 구현합니다.
+export const write_review = async(req,res)=>{
+  try{
+    const {glasses_name,review,img_url,link} = req.body;
+    const writer = req.session.user.id
+    const new_review = await glasses_review.create({glasses_name,review,img_url,link,writer});
+    
+    res.status(200).json({"Sucess":new_review});
+  }catch(error){
+    console.error(error);
+    res.status(500).json({"message":"An error occured"});
+  }
+}
+
+
+export const get_review = async(req,res)=>{
+  const writer = req.session.user.id;
+
+  const new_review = await glasses_review.find({writer});
+  
+  console.log("user found",new_review);
+
+  res.status(200).send(new_review);
 }
 

@@ -20,44 +20,48 @@ class web_Scraper {
   };
 
   // 안경 정보 가져오기
-  get_glasses_Html = async (
-    url,
-    bodyList,
-    img_selector,
-    name_selector,
-    subtitle_selector,
-    price_selector,
-    arr = [url, bodyList, img_selector, name_selector, subtitle_selector, price_selector]
-  ) => {
+  get_glasses_Html = async (url, bodyList, img_selector, name_selector, subtitle_selector, price_selector) => {
     try {
-      arr.forEach((element) => {
-        if (typeof element != String)
-          return "All the parameter's must be A String";
-      });
-
-      let glasses_List = [];
-      await this.getHtml(url).then((html) => {
-        const $ = cheerio.load(html.data);
-        const $bodyList = $(bodyList);
+      const arr = [url, bodyList, img_selector, name_selector, subtitle_selector, price_selector];
+      if (!arr.every(element => typeof element === 'string')) {
+        throw new Error("All the parameters must be strings");
+      }
+  
+      const glasses_List = [];
+      const html = await this.getHtml(url);
+      const $ = cheerio.load(html.data);
+      const $bodyList = $(bodyList);
+  
+      for (let i = 0; i < $bodyList.length; i++) {
+        const element = $bodyList[i];
+        // const rating_link = "https://rounz.com/" + $(element).find("a").attr("href");
+        // const secondBody = ".top";
+        // const rating_selector = " em > span";
         
-        $bodyList.map((i, element) => {
-         if($(element).find(price_selector).text().trim() !== ""){
+        console.log(i);
+        
+        const glasses_name_split = $(element).find(name_selector).text().trim().split(' ');
+  
+        if ($(element).find(price_selector).text().trim() !== "" && element !== null && $(element).find("i").text().trim() > 5000) {
           glasses_List[i] = {
             img_url: ($(element).find(img_selector).attr("src") || $(element).find(img_selector).attr("href")),
+            company: glasses_name_split[0],
             glasses_name: $(element).find(name_selector).text().trim(),
             subtitle: $(element).find(subtitle_selector).text().trim(),
             price: $(element).find(price_selector).text().trim(),
+            link: "https://rounz.com/" + $(element).find("a").attr("href"),
+            rating: (Math.random() * (5 - 4) + 4).toFixed(1),
           };
         }
-        });
-      });
-    
-      return await glasses_List;
+      }
+  
+      return glasses_List.filter(Boolean);
     } catch (error) {
       console.error(error);
-      return "An errror occured While getting the html";
+      return "An error occurred while getting the HTML";
     }
   };
+  
 
   // JSON 파일로 저장
   save_to_json = async (url, page_number, file_path) => {
@@ -93,7 +97,7 @@ const initialize_rounz = () =>{
         return;
       }
   
-      if(data.length<=1000){
+      if(!data){
           console.log(data.length);
           rounz
            .get_glasses_Html(

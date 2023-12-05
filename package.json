@@ -22,7 +22,8 @@
     "fs": "^0.0.1-security",
     "helmet": "^7.0.0",
     "mongoose": "^7.6.3",
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "puppeteer": "^21.5.2"
   },
   "type": "module"
 }
