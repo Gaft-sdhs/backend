@@ -15,8 +15,7 @@ export const signUp = async (req, res) => {
 
     console.log(emailExists);
 
-    if (emailExists)
-      return res.status(400).json({ message: "User already exists" }); // 이미 등록된 유저일 경우 에러 메시지를 반환합니다.
+    if (emailExists) return res.status(400).json({ message: "User already exists" }); // 이미 등록된 유저일 경우 에러 메시지를 반환합니다.
 
     const newUser = await User.create({email, password: encryptedPassword }); // 새로운 유저를 생성합니다.
 
