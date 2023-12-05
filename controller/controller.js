@@ -76,7 +76,6 @@ export const get_regular_glasses = async (req, res) => {
       if (data.length == 0) {
         return res.status(300).json({ message: "Scraping data" });
       }
-
       const objects = JSON.parse(data); // JSON 파일의 내용을 객체로 파싱합니다.
 
       for (let i = 0; i < length; i++) { // 요청받은 길이만큼의 데이터를 가져와 배열에 담습니다.
