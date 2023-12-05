@@ -6,15 +6,19 @@ import glasses_review from "../model/glasses_review.js";
 // 회원가입 처리
 export const signUp = async (req, res) => {
   try {
-    const { email, password,id } = req.body; // 클라이언트로부터 이메일과 비밀번호를 받아옵니다.
+    const { email, password} = req.body; // 클라이언트로부터 이메일과 비밀번호를 받아옵니다.
+
     console.log(req.body);
+    
     const emailExists = await User.exists({ email }); // 이미 존재하는 이메일인지 확인합니다.
     const encryptedPassword = bcrypt.hashSync(password, 10); // 비밀번호를 해싱합니다.
+
+    console.log(emailExists);
 
     if (emailExists)
       return res.status(400).json({ message: "User already exists" }); // 이미 등록된 유저일 경우 에러 메시지를 반환합니다.
 
-    const newUser =await User.create({ id,email, password: encryptedPassword }); // 새로운 유저를 생성합니다.
+    const newUser = await User.create({email, password: encryptedPassword }); // 새로운 유저를 생성합니다.
 
     console.log({ "User created": newUser }); // 새로운 유저가 생성되었음을 로그에 남깁니다.
 
