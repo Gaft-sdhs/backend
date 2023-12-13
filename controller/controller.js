@@ -64,7 +64,7 @@ export const login = async (req, res) => {
 // 일정 개수의 안경 정보를 반환하는 함수
 export const get_regular_glasses = async (req, res) => {
   try {
-    const { length } = req.query; // 클라이언트로부터 받은 길이 정보를 가져옵니다.
+    let { data_length } = req.query; // 클라이언트로부터 받은 길이 정보를 가져옵니다.
     const client_data = []; // 클라이언트에게 전달할 데이터를 담을 배열을 초기화합니다.
 
     const path = process.cwd() + `/json/rounz_glasses.json`; // JSON 파일 경로를 설정합니다.
@@ -79,21 +79,17 @@ export const get_regular_glasses = async (req, res) => {
       if (data.length == 0) {
         return res.status(300).json({ message: "Scraping data" });
       }
-      const objects = JSON.parse(data); // JSON 파일의 내용을 객체로 파싱합니다.
 
-      for (let i = 0; i < length; i++) { // 요청받은 길이만큼의 데이터를 가져와 배열에 담습니다.
-        if(objects[i] === null){
-          i -= 1;
-        }else{
+      const objects = JSON.parse(data); // JSON 파일의 내용을 객체로 파싱합니다.
+      for (let i = 0; i < data_length; i++) { // 요청받은 길이만큼의 데이터를 가져와 배열에 담습니다.
+        if(objects[i] != null){
           client_data.push(objects[i]);
         }
       }
 
-      console.log(client_data.length); // 전송할 데이터의 길이를 로그에 출력합니다.
+       // 전송할 데이터의 길이를 로그에 출력합니다.
 
-      res
-        .status(200)
-        .json({ type: "Array", length: client_data.length, data: client_data }); // 클라이언트에게 응답을 보냅니다.
+      res.status(200).json({ type: "Array", length: client_data.length, data: client_data }); // 클라이언트에게 응답을 보냅니다.
       console.log("response sent");
     });
   } catch (error) {
