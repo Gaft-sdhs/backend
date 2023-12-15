@@ -104,41 +104,40 @@ export const get_regular_glasses = async (req, res) => {
 
 // 랜덤한 안경 정보를 반환하는 함수
 export const send_random = async (req, res) => {
-  const { length } = req.query; // 클라이언트로부터 받은 길이 정보를 가져옵니다.
-  const client_data = []; // 클라이언트에게 전달할 데이터를 담을 배열을 초기화합니다.
-
-  const path = process.cwd() + `/json/rounz_glasses.json`; // JSON 파일 경로를 설정합니다.
-  fs.readFile(path, "utf8", (err, data) => { // JSON 파일을 비동기적으로 읽어옵니다.
-    if (err) {
-      console.error(err);
-      res
-        .status(500)
-        .json({ message: "An error occurred while finding the file" });
-    }
-
-    if (data.length == 0) {
-      return res.status(300).json({ message: "Scraping data" });
-    }
-
-    const objects = JSON.parse(data); // JSON 파일의 내용을 객체로 파싱합니다.
-
-    for (let i = 1; i <= length; i++) { // 요청받은 길이만큼의 데이터를 랜덤으로 가져와 배열에 담습니다.
-      let random_num = Math.floor(Math.random() * 400);
-      console.log(random_num);
-      if(objects[randum_num] === null){
-        i-=1;
-      }else{
-        client_data.push(objects[random_num]);
+  try {
+    const { length } = req.query; // 클라이언트로부터 받은 길이 정보를 가져옵니다.
+    const client_data = []; // 클라이언트에게 전달할 데이터를 담을 배열을 초기화합니다.
+  
+    const path = process.cwd() + `/json/rounz_glasses.json`; // JSON 파일 경로를 설정합니다.
+    fs.readFile(path, "utf8", (err, data) => { // JSON 파일을 비동기적으로 읽어옵니다.
+      if (err) {
+        console.error(err);
+        res.status(500).json({ message: "An error occurred while finding the file" });
       }
-    } 
-
-    console.log(client_data);
-
-    res
-      .status(200)
-      .json({ type: "Array", length: client_data.length, data: client_data }); // 클라이언트에게 응답을 보냅니다.
-    console.log("response sent");
-  });
+  
+      if (data.length == 0) {
+        return res.status(300).json({ message: "Scraping data" });
+      }
+  
+      const objects = JSON.parse(data); // JSON 파일의 내용을 객체로 파싱합니다.
+  
+      console.log(objects.length);
+  
+      for (let i = 1; i <= length; i++) { // 요청받은 길이만큼의 데이터를 랜덤으로 가져와 배열에 담습니다.
+        let random_num = Math.floor(Math.random() * objects.length);
+        console.log(random_num);
+        client_data.push(objects[random_num]);
+      } 
+  
+      console.log(client_data);
+  
+      res.status(200).json({ type: "Array", length: client_data.length, data: client_data }); // 클라이언트에게 응답을 보냅니다.
+      console.log("response sent");
+    }); 
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({"message":"An error occuerd"});
+  }
 };
 
 export const write_review = async(req,res)=>{
